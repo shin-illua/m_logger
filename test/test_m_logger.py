@@ -29,9 +29,12 @@ def test_logger_prepend():
 
 
 def test_logger_multiprocessing(): 
+    # Initialize logger 
     log.initLogger(name="_logger_test_multi")
+    # Start log event listener thread 
     mpQueue = log.initLogListener()
 
+    # Launch worker processes
     workers = []
     for i in range(5):
         p = mp.Process(
@@ -39,15 +42,14 @@ def test_logger_multiprocessing():
             args=(i, mpQueue)
         )
         p.start()
-        workers.append(
-            p
-        )
+        workers.append(p)
 
+    # Wait for all child/worker processes to get finished
     for w in workers: 
         w.join()
 
-    logger = log.initLogger("kill_listeners", mpQueue=mpQueue)
-    logger.info(log.LISTENER_KILL_MSG)
+    # Kill listener thread
+    log.killListener(mpQueue)
 
 
 def _multiprocessing_log_worker(workerId, mpQueue): 

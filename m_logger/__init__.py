@@ -150,3 +150,17 @@ def initLogListener(logger=None):
     mpQueue = multiprocessing.Queue()
     threading.Thread(target=listen, args=(mpQueue, logger)).start()
     return mpQueue
+
+def killListener(mpQueue): 
+    """ Kill listener thread 
+
+    Args: 
+        mpQueue: 
+            The queue in which the listener thread to kill is listening 
+            from. 
+    
+    """
+    _logger = initLogger("__listener_killer__", mpQueue=mpQueue)
+    _logger.info(LISTENER_KILL_MSG)
+
+    
