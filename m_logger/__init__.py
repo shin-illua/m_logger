@@ -76,6 +76,7 @@ def initLogger(
         fileHandler.setFormatter(formatter)
         # Only WARNING events and higher will be written to log file.  
         fileHandler.setLevel(logFileLevel)
+        logger.addHandler(fileHandler)
 
     # Build console log handler 
     consoleHandler = logging.StreamHandler()
@@ -185,3 +186,7 @@ def setPrepend(newPrepend):
 
     if hasattr(_logger, 'prefix'): 
         _logger.prefix = newPrepend 
+
+def getActiveLogger(): 
+    global _logger 
+    return _logger
