@@ -7,6 +7,7 @@ import logging.handlers
 
 # Static 
 _logger = logging.getLogger()
+_mpQeue = None
 
 LISTENER_KILL_MSG = "$____KILL_SERVER____$"
 
@@ -22,8 +23,10 @@ class LoggerAdapter(logging.LoggerAdapter):
         self.prefix = prefix
 
     def process(self, msg, kwargs):
-        return '%s %s' % (self.prefix, msg), kwargs
-
+        if self.prefix:
+            return '%s %s' % (self.prefix, msg), kwargs
+        else: 
+            return msg, kwargs
 
 def initLogger(
     name=__name__,              
@@ -83,16 +86,17 @@ def initLogger(
     # Build and add queue handler (for multiprocessing)
     if mpQueue != None:
         queueHandler = logging.handlers.QueueHandler(mpQueue)
+        # Remove other handlers from this logger
+        logger.handlers = []    
         logger.addHandler(queueHandler)
 
     # Set log level for logger 
     logger.setLevel(level)
 
-    if prepend: 
-        logger = LoggerAdapter(
-            logger, 
-            prepend
-        )
+    logger = LoggerAdapter(
+        logger, 
+        prepend
+    )
 
     debug = logger.debug 
     info = logger.info 
@@ -127,7 +131,7 @@ def listen(mpQueue, logger):
                     # Stop signal 
                     stop = True
                     break 
-                logger.handle(record)
+                logger.logger.handle(record)
             except:
                 import traceback 
                 print("Logger logistener exception!")
@@ -144,11 +148,12 @@ def initLogListener(logger=None):
         The multiprocessing queue object that child processes can use 
         to send log events to the listener. 
     """
-    global _logger 
+    global _logger, _mpQeue
     if logger == None: 
         logger = _logger
     mpQueue = multiprocessing.Queue()
     threading.Thread(target=listen, args=(mpQueue, logger)).start()
+    _mpQeue = mpQueue
     return mpQueue
 
 def killListener(mpQueue): 
@@ -163,4 +168,20 @@ def killListener(mpQueue):
     _logger = initLogger("__listener_killer__", mpQueue=mpQueue)
     _logger.info(LISTENER_KILL_MSG)
 
-    
+def getListenerQueue(): 
+    global _mpQeue
+    return _mpQeue
+
+def getPrepend(): 
+    global _logger 
+
+    if hasattr(_logger, 'prefix'):
+        return _logger.prefix
+
+    return None 
+
+def setPrepend(newPrepend): 
+    global _logger 
+
+    if hasattr(_logger, 'prefix'): 
+        _logger.prefix = newPrepend 
